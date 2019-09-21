@@ -53,7 +53,7 @@ typings/
 .npm
 
 # Node modules
-node_modules
+!node_modules
 
 # Optional eslint cache
 .eslintcache
