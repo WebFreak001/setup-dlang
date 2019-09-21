@@ -32,33 +32,46 @@ async function dmd(version: string): Promise<CompilerDescription> {
             break;
     }
 
-    const matches = version.match(/^(2\.\d+\.\d+)(-.+)?$/);
+    const matches = version.match(/^(2\.(\d+)\.\d+)(-.+)?$/);
     if (version != "master" && !matches)
         throw new Error("unrecognized DMD version: " + version);
 
+    const minor = version == "master" ? undefined : parseInt(matches![2]);
+    let universal = false;
+    if (minor !== undefined && minor < 65) {
+        if (version.endsWith(".0")) {
+            version = version.slice(0, -2);
+        }
+        universal = true;
+    }
+
     const base_url = version == "master" ?
           `http://downloads.dlang.org/nightlies/dmd-master/dmd.${version}`
-        : beta ? `http://downloads.dlang.org/pre-releases/2.x/${matches[1]}/dmd.${version}`
+        : beta ? `http://downloads.dlang.org/pre-releases/2.x/${matches![1]}/dmd.${version}`
         : `http://downloads.dlang.org/releases/2.x/${version}/dmd.${version}`;
 
     switch (process.platform) {
         case "win32": return {
             name: "dmd",
             version: version,
-            url: `${base_url}.windows.7z`,
+            url: universal ? `${base_url}.zip`
+                : minor !== undefined && minor < 69 ? `${base_url}.windows.zip`
+                : `${base_url}.windows.7z`,
             binpath: "\\dmd2\\windows\\bin"
         };
         case "linux": return {
             name: "dmd",
             version: version,
-            url: `${base_url}.linux.tar.xz`,
+            url: universal ? `${base_url}.zip` : `${base_url}.linux.tar.xz`,
             binpath: "/dmd2/linux/bin64"
         };
         case "darwin": return {
             name: "dmd",
             version: version,
-            url: `${base_url}.osx.tar.xz`,
-            binpath: "/dmd2/osx/bin/"
+            url: universal ? `${base_url}.zip`
+                : minor !== undefined && minor < 69 ? `${base_url}.osx.zip`
+                : `${base_url}.osx.tar.xz`,
+            binpath: "/dmd2/osx/bin"
         };
         default:
             throw new Error("unsupported platform: " + process.platform);

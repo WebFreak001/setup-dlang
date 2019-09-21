@@ -35,6 +35,13 @@ async function run() {
 }
 
 async function extract(archive: string) {
+    if (archive.endsWith(".7z"))
+        return await tc.extract7z(archive);
+    else if (archive.endsWith(".zip"))
+        return await tc.extractZip(archive);
+    else if (/\.tar(\.\w+)?$/.test(archive))
+        return await tc.extractTar(archive, undefined, 'x');
+
     switch (process.platform) {
         case "win32":
             return await tc.extract7z(archive);
