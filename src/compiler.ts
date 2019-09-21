@@ -9,11 +9,11 @@ export interface CompilerDescription {
 }
 
 export async function compiler(description: string): Promise<CompilerDescription> {
-    const matches = description.match(/(\w+)-(.+)/);
+    const matches = description.match(/^(\w+)-(.+)$/);
     if (!matches) throw new Error("invalid compiler string: " + description);
 
     switch (matches[1]) {
-        case "dmd": return dmd(matches[2]);
+        case "dmd": return await dmd(matches[2]);
         case "ldc": return await ldc(matches[2]);
         default: throw new Error("unrecognized compiler: " + matches[1]);
     }
@@ -24,27 +24,28 @@ async function dmd(version: string): Promise<CompilerDescription> {
 
     switch (version) {
         case "latest":
-		    version = await body_as_text("http://downloads.dlang.org/releases/LATEST");
-		    break;
-		case "beta":
+            version = await body_as_text("http://downloads.dlang.org/releases/LATEST");
+            break;
+        case "beta":
             version = await body_as_text("http://downloads.dlang.org/pre-releases/LATEST");
             beta = true;
-		    break;
-	}
+            break;
+    }
 
-    const matches = version.match(/(2.\d+.\d+)(-.+)?/);
-    if (!matches)
+    const matches = version.match(/^(2\.\d+\.\d+)(-.+)?$/);
+    if (version != "master" && !matches)
         throw new Error("unrecognized DMD version: " + version);
 
-    const base_url = beta ?
-          `http://downloads.dlang.org/pre-releases/2.x/${matches[1]}/dmd.${version}`
+    const base_url = version == "master" ?
+          `http://downloads.dlang.org/nightlies/dmd-master/dmd.${version}`
+        : beta ? `http://downloads.dlang.org/pre-releases/2.x/${matches[1]}/dmd.${version}`
         : `http://downloads.dlang.org/releases/2.x/${version}/dmd.${version}`;
 
     switch (process.platform) {
         case "win32": return {
             name: "dmd",
             version: version,
-            url: `${base_url}.windows.7z`,               
+            url: `${base_url}.windows.7z`,
             binpath: "\\dmd2\\windows\\bin"
         };
         case "linux": return {
@@ -65,19 +66,34 @@ async function dmd(version: string): Promise<CompilerDescription> {
 }
 
 async function ldc(version: string): Promise<CompilerDescription> {
+    let ci = false;
+
     switch (version) {
         case "latest":
             version = await body_as_text("https://ldc-developers.github.io/LATEST");
             break;
         case "beta":
             version = await body_as_text("https://ldc-developers.github.io/LATEST_BETA");
-	        break;
-    }     
-    
+            break;
+        case "master":
+            // see https://github.com/ldc-developers/ldc/releases/tag/CI
+            // http to avoid certificate issues as we are only grabbing a commit hash that must be available as github release anyway
+            const links = await body_as_text("http://thecybershadow.net/d/github-ldc/");
+            // we don't simply trust the links in this endpoint!
+            if (!links.startsWith("https://github.com/ldc-developers/ldc/releases/download/CI/ldc-"))
+                throw new Error("Unexpected response from CyberShadow LDC API endpoint");
+
+            version = links.substr("https://github.com/ldc-developers/ldc/releases/download/CI/ldc-".length, 8);
+            ci = true;
+            break;
+    }
+
     if (!version.match(/(\d+).(\d+).(\d+)/))
-	    throw new Error("unrecognized LDC version: " + version);
-    
-    const base_url =  `https://github.com/ldc-developers/ldc/releases/download/v${version}/ldc2-${version}`;
+        throw new Error("unrecognized LDC version: " + version);
+
+    const base_url = ci ?
+          `https://github.com/ldc-developers/ldc/releases/download/CI/ldc2-${version}`
+        : `https://github.com/ldc-developers/ldc/releases/download/v${version}/ldc2-${version}`;
 
     switch (process.platform) {
         case "win32": return {
