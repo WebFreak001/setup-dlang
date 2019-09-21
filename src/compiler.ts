@@ -88,7 +88,7 @@ async function ldc(version: string): Promise<CompilerDescription> {
             break;
     }
 
-    if (!version.match(/(\d+).(\d+).(\d+)/))
+    if (!version.match(/^(\d+)\.(\d+)\.(\d+)/))
         throw new Error("unrecognized LDC version: " + version);
 
     const base_url = ci ?
