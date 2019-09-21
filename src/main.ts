@@ -22,7 +22,7 @@ async function run() {
         else {
             console.log(`Downloading ${descr.url}`);
             const archive = await tc.downloadTool(descr.url);
-            const dc_path = await extract(archive);
+            const dc_path = await extract(descr.url, archive);
             cached = await tc.cacheDir(dc_path, 'dc', input);
         }
 
@@ -34,12 +34,12 @@ async function run() {
     }
 }
 
-async function extract(archive: string) {
-    if (archive.endsWith(".7z"))
+async function extract(format: string, archive: string) {
+    if (format.endsWith(".7z"))
         return await tc.extract7z(archive);
-    else if (archive.endsWith(".zip"))
+    else if (format.endsWith(".zip"))
         return await tc.extractZip(archive);
-    else if (/\.tar(\.\w+)?$/.test(archive))
+    else if (/\.tar(\.\w+)?$/.test(format))
         return await tc.extractTar(archive, undefined, 'x');
 
     switch (process.platform) {
