@@ -6,6 +6,11 @@ export interface CompilerDescription {
     version: string;
     url: string;
     binpath: string;
+    download_dub?: boolean;
+}
+
+export interface DubDescription {
+    url: string;
 }
 
 export async function compiler(description: string): Promise<CompilerDescription> {
@@ -16,6 +21,24 @@ export async function compiler(description: string): Promise<CompilerDescription
         case "dmd": return await dmd(matches[2]);
         case "ldc": return await ldc(matches[2]);
         default: throw new Error("unrecognized compiler: " + matches[1]);
+    }
+}
+
+export async function legacyDub(): Promise<DubDescription> {
+    // download some dub version for legacy compilers not shipping dub
+    // this is the last version on the old download page from September 2018
+    switch (process.platform) {
+        case "win32": return {
+            url: "https://code.dlang.org/files/dub-1.11.0-windows-x86.zip"
+        };
+        case "linux": return {
+            url: "https://code.dlang.org/files/dub-1.11.0-linux-x86_64.tar.gz"
+        };
+        case "darwin": return {
+            url: "https://code.dlang.org/files/dub-1.11.0-osx-x86_64.tar.gz"
+        };
+        default:
+            throw new Error("unsupported platform: " + process.platform);
     }
 }
 
@@ -53,6 +76,8 @@ async function dmd(version: string): Promise<CompilerDescription> {
         : beta ? `http://downloads.dlang.org/pre-releases/2.x/${folder}/dmd.${version}`
         : `http://downloads.dlang.org/releases/2.x/${folder}/dmd.${version}`;
 
+    const download_dub = minor !== undefined && minor < 72;
+
     switch (process.platform) {
         case "win32": return {
             name: "dmd",
@@ -60,13 +85,17 @@ async function dmd(version: string): Promise<CompilerDescription> {
             url: universal ? `${base_url}.zip`
                 : minor !== undefined && minor < 69 ? `${base_url}.windows.zip`
                 : `${base_url}.windows.7z`,
-            binpath: "\\dmd2\\windows\\bin"
+            binpath: "\\dmd2\\windows\\bin",
+            download_dub: download_dub
         };
         case "linux": return {
             name: "dmd",
             version: version,
-            url: universal ? `${base_url}.zip` : `${base_url}.linux.tar.xz`,
-            binpath: "/dmd2/linux/bin64"
+            url: universal ? `${base_url}.zip`
+                : minor !== undefined && minor < 69 ? `${base_url}.linux.zip`
+                : `${base_url}.linux.tar.xz`,
+            binpath: "/dmd2/linux/bin64",
+            download_dub: download_dub
         };
         case "darwin": return {
             name: "dmd",
@@ -74,7 +103,8 @@ async function dmd(version: string): Promise<CompilerDescription> {
             url: universal ? `${base_url}.zip`
                 : minor !== undefined && minor < 69 ? `${base_url}.osx.zip`
                 : `${base_url}.osx.tar.xz`,
-            binpath: "/dmd2/osx/bin"
+            binpath: "/dmd2/osx/bin",
+            download_dub: download_dub
         };
         default:
             throw new Error("unsupported platform: " + process.platform);
