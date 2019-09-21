@@ -36,19 +36,22 @@ async function dmd(version: string): Promise<CompilerDescription> {
     if (version != "master" && !matches)
         throw new Error("unrecognized DMD version: " + version);
 
+    let folder = beta ? matches![1] : version;
+
     const minor = version == "master" ? undefined : parseInt(matches![2]);
     let universal = false;
     if (minor !== undefined && minor < 65) {
         if (version.endsWith(".0")) {
             version = version.slice(0, -2);
         }
+        folder = version.match(/^2\.\d+/)![0];
         universal = true;
     }
 
     const base_url = version == "master" ?
           `http://downloads.dlang.org/nightlies/dmd-master/dmd.${version}`
-        : beta ? `http://downloads.dlang.org/pre-releases/2.x/${matches![1]}/dmd.${version}`
-        : `http://downloads.dlang.org/releases/2.x/${version}/dmd.${version}`;
+        : beta ? `http://downloads.dlang.org/pre-releases/2.x/${folder}/dmd.${version}`
+        : `http://downloads.dlang.org/releases/2.x/${folder}/dmd.${version}`;
 
     switch (process.platform) {
         case "win32": return {
