@@ -18,15 +18,14 @@ jobs:
         os: [ubuntu-latest, windows-latest, macOS-latest]
         dc:
           [
-            ldc-1.17.0,
-            ldc-latest,
-            ldc-beta,
-            ldc-master,
-            dmd-2.088.0,
-            dmd-latest,
-            dmd-beta,
-            dmd-master,
-            "",
+            ldc-master1,
+            ldc-master2,
+            ldc-master3,
+            ldc-master4,
+            ldc-master5,
+            ldc-master6,
+            ldc-master7,
+            ldc-master8,
           ]
     runs-on: ${{ matrix.os }}
     steps:

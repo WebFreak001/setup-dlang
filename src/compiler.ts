@@ -55,6 +55,9 @@ async function dmd(version: string): Promise<CompilerDescription> {
             break;
     }
 
+    if (version.startsWith("master"))
+        version = "master";
+
     const matches = version.match(/^(2\.(\d+)\.\d+)(-.+)?$/);
     if (version != "master" && !matches)
         throw new Error("unrecognized DMD version: " + version);

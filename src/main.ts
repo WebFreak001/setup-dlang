@@ -39,7 +39,7 @@ async function run() {
         core.exportVariable("DC", descr.name);
         console.log("Done");
     } catch (error) {
-        core.setFailed(error.message);
+        core.setFailed(error.toString());
     }
 }
 
