@@ -117,6 +117,9 @@ async function dmd(version: string): Promise<CompilerDescription> {
 async function ldc(version: string): Promise<CompilerDescription> {
     let ci = false;
 
+    if (version.startsWith("master"))
+        version = "master";
+
     switch (version) {
         case "latest":
             version = await body_as_text("https://ldc-developers.github.io/LATEST");
